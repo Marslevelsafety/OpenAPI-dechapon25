@@ -1,234 +1,104 @@
-# Invoker
+Invoker
 
 Generic and extensible callable invoker.
 
-[![Build Status](https://img.shields.io/travis/PHP-DI/Invoker.svg?style=flat-square)](https://travis-ci.org/PHP-DI/Invoker)
-[![Coverage Status](https://img.shields.io/coveralls/PHP-DI/Invoker/master.svg?style=flat-square)](https://coveralls.io/r/PHP-DI/Invoker?branch=master)
-[![Scrutinizer Code Quality](https://img.shields.io/scrutinizer/g/PHP-DI/Invoker.svg?style=flat-square)](https://scrutinizer-ci.com/g/PHP-DI/Invoker/?branch=master)
-[![Latest Version](https://img.shields.io/github/release/PHP-DI/invoker.svg?style=flat-square)](https://packagist.org/packages/PHP-DI/invoker)
+￼
 
-## Why?
+Why?
 
-Who doesn't need an over-engineered `call_user_func()`?
+Who doesn't need an over-engineered call_user_func()?
 
-### Named parameters
+Named parameters
 
-Does this [Silex](http://silex.sensiolabs.org) example look familiar:
+Does this Silex example look familiar:
 
-```php
-$app->get('/project/{project}/issue/{issue}', function ($project, $issue) {
-    // ...
-});
-```
+$app->get('/project/{project}/issue/{issue}', function ($project, $issue) { // ... }); 
 
-Or this command defined with [Silly](https://github.com/mnapoli/silly#usage):
+Or this command defined with Silly:
 
-```php
-$app->command('greet [name] [--yell]', function ($name, $yell) {
-    // ...
-});
-```
+$app->command('greet [name] [--yell]', function ($name, $yell) { // ... }); 
 
-Same pattern in [Slim](http://www.slimframework.com):
+Same pattern in Slim:
 
-```php
-$app->get('/hello/:name', function ($name) {
-    // ...
-});
-```
+$app->get('/hello/:name', function ($name) { // ... }); 
 
 You get the point. These frameworks invoke the controller/command/handler using something akin to named parameters: whatever the order of the parameters, they are matched by their name.
 
-**This library allows to invoke callables with named parameters in a generic and extensible way.**
+This library allows you to invoke callables with named parameters in a generic and extensible way.
 
-### Dependency injection
+Dependency injection
 
 Anyone familiar with AngularJS is familiar with how dependency injection is performed:
 
-```js
-angular.controller('MyController', ['dep1', 'dep2', function(dep1, dep2) {
-    // ...
-}]);
-```
+angular.controller('MyController', ['dep1', 'dep2', function(dep1, dep2) { // ... }]); 
 
-In PHP we find this pattern again in some frameworks and DI containers with partial to full support. For example in Silex you can type-hint the application to get it injected, but it only works with `Silex\Application`:
+In PHP we find this pattern again in some frameworks and DI containers with partial to full support.
 
-```php
-$app->get('/hello/{name}', function (Silex\Application $app, $name) {
-    // ...
-});
-```
+PHP-DI provides a way to invoke a callable and resolve all dependencies from the container using type-hints:
 
-In Silly, it only works with `OutputInterface` to inject the application output:
+$container->call(function (Logger $logger, EntityManager $em) { // ... }); 
 
-```php
-$app->command('greet [name]', function ($name, OutputInterface $output) {
-    // ...
-});
-```
+This library provides clear extension points to let frameworks implement any kind of dependency injection support they want.
 
-[PHP-DI](http://php-di.org/doc/container.html) provides a way to invoke a callable and resolve all dependencies from the container using type-hints:
-
-```php
-$container->call(function (Logger $logger, EntityManager $em) {
-    // ...
-});
-```
-
-**This library provides clear extension points to let frameworks implement any kind of dependency injection support they want.**
-
-### TL/DR
+TL/DR
 
 In short, this library is meant to be a base building block for calling a function with named parameters and/or dependency injection.
 
-## Installation
+Installation
 
-```sh
-$ composer require PHP-DI/invoker
-```
+composer require PHP-DI/invoker 
 
-## Usage
+Usage
 
-### Default behavior
+Default behavior
 
-By default the `Invoker` can call using named parameters:
+By default the Invoker can call using named parameters:
 
-```php
-$invoker = new Invoker\Invoker;
+$invoker = new Invoker\Invoker; $invoker->call(function () { echo 'Hello world!'; }); // Simple parameter array $invoker->call(function ($name) { echo 'Hello ' . $name; }, ['John']); // Named parameters $invoker->call(function ($name) { echo 'Hello ' . $name; }, [ 'name' => 'John' ]); // Use the default value $invoker->call(function ($name = 'world') { echo 'Hello ' . $name; }); // Invoke any PHP callable $invoker->call(['MyClass', 'myStaticMethod']); // Using Class::method syntax $invoker->call('MyClass::myStaticMethod'); 
 
-$invoker->call(function () {
-    echo 'Hello world!';
-});
+Dependency injection in parameters is supported but needs to be configured with your container.
 
-// Simple parameter array
-$invoker->call(function ($name) {
-    echo 'Hello ' . $name;
-}, ['John']);
+Additionally, callables can also be resolved from your container.
 
-// Named parameters
-$invoker->call(function ($name) {
-    echo 'Hello ' . $name;
-}, [
-    'name' => 'John'
-]);
+Parameter resolvers
 
-// Use the default value
-$invoker->call(function ($name = 'world') {
-    echo 'Hello ' . $name;
-});
+Extending the behavior of the Invoker is easy and is done by implementing a ParameterResolver.
 
-// Invoke any PHP callable
-$invoker->call(['MyClass', 'myStaticMethod']);
+This is explained in detail in the Parameter resolvers documentation.
 
-// Using Class::method syntax
-$invoker->call('MyClass::myStaticMethod');
-```
-
-Dependency injection in parameters is supported but needs to be configured with your container. Read on or jump to [*Built-in support for dependency injection*](#built-in-support-for-dependency-injection) if you are impatient.
-
-Additionally, callables can also be resolved from your container. Read on or jump to [*Resolving callables from a container*](#resolving-callables-from-a-container) if you are impatient.
-
-### Parameter resolvers
-
-Extending the behavior of the `Invoker` is easy and is done by implementing a [`ParameterResolver`](https://github.com/PHP-DI/Invoker/blob/master/src/ParameterResolver/ParameterResolver.php).
-
-This is explained in details the [Parameter resolvers documentation](doc/parameter-resolvers.md).
-
-#### Built-in support for dependency injection
+Built-in support for dependency injection
 
 Rather than have you re-implement support for dependency injection with different containers every time, this package ships with 2 optional resolvers:
 
-- [`TypeHintContainerResolver`](https://github.com/PHP-DI/Invoker/blob/master/src/ParameterResolver/Container/TypeHintContainerResolver.php)
+TypeHintContainerResolver
 
-    This resolver will inject container entries by searching for the class name using the type-hint:
+This resolver will inject container entries by searching for the class name using the type-hint.
 
-    ```php
-    $invoker->call(function (Psr\Logger\LoggerInterface $logger) {
-        // ...
-    });
-    ```
+ParameterNameContainerResolver
 
-    In this example it will `->get('Psr\Logger\LoggerInterface')` from the container and inject it.
+This resolver will inject container entries by searching for the name of the parameter.
 
-    This resolver is only useful if you store objects in your container using the class (or interface) name. Silex or Symfony for example store services under a custom name (e.g. `twig`, `db`, etc.) instead of the class name: in that case use the resolver shown below.
+These resolvers can work with any dependency injection container compliant with PSR-11.
 
-- [`ParameterNameContainerResolver`](https://github.com/PHP-DI/Invoker/blob/master/src/ParameterResolver/Container/ParameterNameContainerResolver.php)
+Resolving callables from a container
 
-    This resolver will inject container entries by searching for the name of the parameter:
+The Invoker can be wired to your DI container to resolve the callables.
 
-    ```php
-    $invoker->call(function ($twig) {
-        // ...
-    });
-    ```
-
-    In this example it will `->get('twig')` from the container and inject it.
-
-These resolvers can work with any dependency injection container compliant with [PSR-11](http://www.php-fig.org/psr/psr-11/).
-
-Setting up those resolvers is simple:
-
-```php
-// $container must be an instance of Psr\Container\ContainerInterface
-$container = ...
-
-$containerResolver = new TypeHintContainerResolver($container);
-// or
-$containerResolver = new ParameterNameContainerResolver($container);
-
-$invoker = new Invoker\Invoker;
-// Register it before all the other parameter resolvers
-$invoker->getParameterResolver()->prependResolver($containerResolver);
-```
-
-You can also register both resolvers at the same time if you wish by prepending both. Implementing support for more tricky things is easy and up to you!
-
-### Resolving callables from a container
-
-The `Invoker` can be wired to your DI container to resolve the callables.
+Security note: Do not pass untrusted user input directly to Invoker::call() when callable resolution through a container is enabled. Applications should validate or allowlist callable and class names before invoking them. A callable that can be selected by untrusted input may result in unintended application code being executed with the privileges available to the application.
 
 For example with an invokable class:
 
-```php
-class MyHandler
-{
-    public function __invoke()
-    {
-        // ...
-    }
-}
+class MyHandler { public function __invoke() { // ... } } $invoker->call('MyHandler'); 
 
-// By default this doesn't work: an instance of the class should be provided
-$invoker->call('MyHandler');
+If the container is configured:
 
-// If we set up the container to use
-$invoker = new Invoker\Invoker(null, $container);
-// Now 'MyHandler' is resolved using the container!
-$invoker->call('MyHandler');
-```
+$invoker = new Invoker\Invoker(null, $container); $invoker->call('MyHandler'); 
 
-The same works for a class method:
+The same applies to class methods:
 
-```php
-class WelcomeController
-{
-    public function home()
-    {
-        // ...
-    }
-}
+class WelcomeController { public function home() { // ... } } $invoker = new Invoker\Invoker(null, $container); $invoker->call(['WelcomeController', 'home']); // Alternatively: $invoker->call('WelcomeController::home'); 
 
-// By default this doesn't work: home() is not a static method
-$invoker->call(['WelcomeController', 'home']);
+Applications using this feature as a framework dispatcher should ensure that externally supplied callable names are validated against an explicit allowlist or otherwise constrained to intended application handlers.
 
-// If we set up the container to use
-$invoker = new Invoker\Invoker(null, $container);
-// Now 'WelcomeController' is resolved using the container!
-$invoker->call(['WelcomeController', 'home']);
-// Alternatively we can use the Class::method syntax
-$invoker->call('WelcomeController::home');
-```
+Again, any PSR-11 compliant container can be provided.
 
-That feature can be used as the base building block for a framework's dispatcher.
-
-Again, any [PSR-11](http://www.php-fig.org/psr/psr-11/) compliant container can be provided.
